@@ -1,0 +1,86 @@
+version: '3.7'
+
+services:
+  workspace:
+    container_name: jen_workspace
+    build:
+      context: .
+      dockerfile: docker/workspace/Dockerfile
+    volumes:
+      - ./:/var/www/laravel
+    tty: true
+    networks:
+      - ${NETWORK}
+  php-fpm:
+    container_name: jen_php-fpm
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    volumes_from:
+      - workspace
+    expose:
+      - "2222"
+    links:
+      - workspace
+    networks:
+      - ${NETWORK}
+  nginx:
+    container_name: jen_nginx
+    build:
+      context: .
+      dockerfile: docker/nginx/Dockerfile
+    volumes_from:
+      - workspace
+    ports:
+      - "8888:80"
+    links:
+      - php-fpm
+    networks:
+      - ${NETWORK}
+  postgres:
+    container_name: jen_postgres
+    image: postgres:14
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_DATABASE}
+      PGDATA: /data/postgres
+      TZ: 'Etc/UTC'
+    volumes:
+      - postgres:/data/postgres
+    networks:
+      - ${NETWORK}
+  pgadmin:
+    container_name: jen_pgadmin
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    volumes:
+      - pgadmin:/var/lib/pgadmin
+    ports:
+      - ${PGADMIN_PORT}:80
+    links:
+      - "postgres:postgres"
+    networks:
+      - ${NETWORK}
+  redis:
+    container_name: jen_redis
+    image: redis:6.0
+    expose:
+      - ${REDIS_PORT}
+    volumes_from:
+      - workspace
+    networks:
+      - ${NETWORK}
+networks:
+  jen-network:
+    driver: bridge
+    name: ${NETWORK}
+
+volumes:
+  postgres:
+  pgadmin:
