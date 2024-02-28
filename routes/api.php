@@ -13,6 +13,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\BookController;
 
 Route::group([
     'prefix' => 'v1',
@@ -31,4 +32,6 @@ Route::group([
         Route::post('logout', [AuthController::class, 'logout']);
         Route::get('profile', [AuthController::class, 'profile']);
     });
+
+    Route::get('book/search', [BookController::class, 'searchBook'])->name('search-book');
 });
